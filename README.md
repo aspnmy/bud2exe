@@ -7,10 +7,9 @@
 -   "description": "一个sh脚本编译工具,可以编译脚本成bin或exe文件,暂时不支持MacOS,可绕过杀软,请不要编译非法代码.Tg讨论组:https://t.me/+BqvlH6BDOWE3NjQ1,赞助我们:TKqTUNcBWiRDdczuHoQstMD4XRyFgNwHiF (TRX/USDT)\",
 -   "main": "Src/bud2exe",
 -   "author": "aspnmy@gmail.com",
--   "license": "ISC",
 -   "bugs": {
--     "url": "https://github.com/aspnmy/bud2exe/issues"
--   },
+     "url": "https://github.com/aspnmy/bud2exe/issues"
+   },
 -   "homepage": "https://github.com/aspnmy/bud2exe-readme"
 
 ## 用法
