@@ -19,6 +19,7 @@ BUD_VER=$(cat ${SRC_DIR}/newVer.bud)
 
 bud2bin(){
     mkdir -p ${BUD_DIR}/${BUD_VER}
+    echo "${SRC_DIR}/${SH_NAME}"
     shc -f ${SRC_DIR}/${SH_NAME} -o ${BUD_DIR}/${BUD_VER}${SH_NAME}
     echo "脚本编译成功,保存在'${BUD_DIR}/${BUD_VER}${SH_NAME}'"
     exit
@@ -39,7 +40,7 @@ show_menu(){
     echo "Tg讨论组:https://t.me/+BqvlH6BDOWE3NjQ1"
     echo "赞助我们:TKqTUNcBWiRDdczuHoQstMD4XRyFgNwHiF (TRX/USDT)"
     echo "请选择一个-选项:"
-    echo "1)bud2bin/编译脚本成为一个二进制文件(需要sfc组件)"
+    echo "1)bud2bin/编译脚本成为一个二进制文件(需要shc组件)"
     echo "2)bud2exe/编译脚本成为一个exe文件(需要c安装器)"
     echo "0)退出"
 }
@@ -52,7 +53,7 @@ while true; do
     # 根据用户的选择执行不同的操作
     case $choice in
         1)
-            echo "你选择了-bud2bin/编译脚本成为一个二进制文件(需要sfc组件:sudo apt-get install -y sfc)"
+            echo "你选择了-bud2bin/编译脚本成为一个二进制文件(需要shc组件:sudo apt-get install -y shc)"
             bud2bin
             ;;
         2)
