@@ -1,0 +1,91 @@
+#!/bin/bash
+# 编译脚本成二进制文件
+#   "name": "bud2exe",
+#   "version": "1.0.0",
+#   "description": "一个sh脚本编译工具,可以编译脚本成bin或exe文件,暂时不支持MacOS,可绕过杀软,请不要编译非法代码.Tg讨论组:https://t.me/+BqvlH6BDOWE3NjQ1,赞助我们:TKqTUNcBWiRDdczuHoQstMD4XRyFgNwHiF (TRX/USDT)\",
+#   "main": "Src/bud2exe",
+#   "author": "aspnmy@gmail.com",
+#   "license": "ISC",
+#   "bugs": {
+#     "url": "https://github.com/aspnmy/bud2exe/issues"
+#   },
+#   "homepage": "https://github.com/aspnmy/bud2exe#readme"
+
+BUDTOOL_VER="1.0.0"
+SH_NAME="poetryBeBe"
+SRC_DIR="../Src"
+BUD_DIR="../build"
+
+
+bud2exe_bin(){
+    BUD_VER=$(cat ${SRC_DIR}/newVer.bud)
+    mkdir -p ${BUD_DIR}/${BUD_VER}
+    
+    # 静态编译-不依赖系统组件库 CLAGS="-static" shc -r -f bud2exe
+    CLAGS="-static" shc -r -f ${SRC_DIR}/${SH_NAME} -o ${BUD_DIR}/${BUD_VER}${SH_NAME}
+    echo "脚本编译成功,保存在'${BUD_DIR}/${BUD_VER}${SH_NAME}'"
+    exit
+}
+
+bud2exe_GCC(){
+    BUD_VER=$(cat ${SRC_DIR}/newVer.bud)
+    mkdir -p ${BUD_DIR}/${BUD_VER}
+    
+    # 静态编译-不依赖系统组件库 CLAGS="-static" shc -r -f bud2exe
+    CLAGS="-static" shc -r -f ${SRC_DIR}/${SH_NAME} -o ${BUD_DIR}/${BUD_VER}${SH_NAME}
+    gcc -o ${BUD_DIR}/${BUD_VER}${SH_NAME}gcc ${BUD_DIR}/${BUD_VER}${SH_NAME}.x.c
+    echo "脚本编译成功,保存在'${BUD_DIR}/${BUD_VER}${SH_NAME}gcc'"
+    exit
+}
+
+bud2exe_x86_64(){
+    BUD_VER=$(cat ${SRC_DIR}/newVer.bud)
+    mkdir -p ${BUD_DIR}/${BUD_VER}
+    CLAGS="-static" shc -r -f ${SRC_DIR}/${SH_NAME} -o ${BUD_DIR}/${BUD_VER}${SH_NAME}
+    x86_64-w64-mingw32-gcc -o ${BUD_DIR}/${BUD_VER}${SH_NAME}.x86_64.exe ${BUD_DIR}/${BUD_VER}${SH_NAME}.x.c
+    echo "脚本编译成功,保存在'${BUD_DIR}/${BUD_VER}${SH_NAME}.x86_64.exe'"
+    exit
+}
+
+# 定义一个函数来显示菜单
+show_menu(){
+    echo "poetryBeBe poetry哔哔小子,一个简单的poetry管理工具-免费版"
+    echo "Tg讨论组:https://t.me/+BqvlH6BDOWE3NjQ1"
+    echo "赞助我们:TKqTUNcBWiRDdczuHoQstMD4XRyFgNwHiF (TRX/USDT)"
+    echo "poetryBeBe配套工具,需要放在poetryBeBe项目./tools目录下,且./Src/poetryBeBe 有代码文件存在"
+    echo "请选择一个-选项:"
+    echo "1)bud2exe_bin/编译脚本成为一个1层加壳的二进制文件(需要shc组件)"
+    echo "2)bud2exe_GCC/用GCC再次编译脚本成为一个2层加壳的二进制文件(需要gcc组件)"
+    echo "3)bud2exe_x86_64/编译脚本成为一个64位exe文件(需要安装MinGW-w64 交叉编译工具链)"
+    echo "0)退出"
+}
+
+# 无限循环,直到用户选择退出
+while true; do
+    show_menu
+    read -p "请输入你的选择: " choice
+
+    # 根据用户的选择执行不同的操作
+    case $choice in
+        1)
+            echo "你选择了-bud2exe_bin/编译脚本成为一个1层加壳的二进制文件(需要shc组件:sudo apt-get install -y shc)"
+            bud2exe_bin
+            ;;
+        2)
+            echo "你选择了-bud2exe_GCC/用GCC再次编译脚本成为一个2层加壳的二进制文件(需要安装gcc 交叉编译工具链:sudo apt-get install -y gcc)"
+            bud2exe_GCC
+            ;;
+        3)
+            echo "你选择了-bud2exe_x86_64/编译脚本成为一个64位exe文件(需要安装MinGW-w64 交叉编译工具链:sudo apt-get install -y mingw-w64)"
+            bud2exe_GCC
+            ;;            
+        0)
+            echo "退出菜单"
+            break
+            ;;            
+        *)
+            echo "无效的-选项,请重新输入。"
+            ;;
+    esac
+    echo "" # 打印一个空行以分隔菜单
+done
