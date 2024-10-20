@@ -1,0 +1,130 @@
+#!/bin/bash
+# 编译脚本成二进制文件
+#   "name": "bud2exe",
+#   "version": "1.0.0",
+#   "description": "一个sh脚本编译工具,可以编译脚本成bin或exe文件,暂时不支持MacOS,可绕过杀软,请不要编译非法代码.Tg讨论组:https://t.me/+BqvlH6BDOWE3NjQ1,赞助我们:TKqTUNcBWiRDdczuHoQstMD4XRyFgNwHiF (TRX/USDT)\",
+#   "main": "Src/bud2exe",
+#   "author": "aspnmy@gmail.com",
+#   "license": "ISC",
+#   "bugs": {
+#     "url": "https://github.com/aspnmy/bud2exe/issues"
+#   },
+#   "homepage": "https://github.com/aspnmy/bud2exe#readme"
+
+
+# 定义颜色代码
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+BLUE="\033[0;34m"
+NC="\033[0m" # No Color
+
+# 读取版本号
+bud_ver=$(cat "./newVer.bud")
+if [ -z "$bud_ver" ]; then
+    echo -e "${RED}Error: Version file './newVer.bud' is empty or not found.${NC}"
+    exit 1
+fi
+
+VERSION=$bud_ver
+echo "Version: $VERSION"
+
+# 编译脚本成二进制文件的函数
+compile_script() {
+    local method=$1
+    local output_file=$2
+    local input_file=$3
+
+    # 根据方法设置编译标志
+    local flags=""
+    case "$method" in
+        b2bin)
+            flags="-static"
+            ;;
+        b2GCC)
+            flags="-static -Os"
+            ;;
+        b2WIN)
+            echo -e "${YELLOW}b2WIN is under development.${NC}"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}Invalid compilation method: $method${NC}"
+            exit 1
+            ;;
+    esac
+
+    # 调用编译器进行编译
+    if [ "$method" = "b2bin" ]; then
+        shc -r -f "$input_file" -o "${output_file}_v${bud_ver}"
+    elif [ "$method" = "b2GCC" ]; then
+        gcc $flags -o "${output_file}_v${bud_ver}" "$input_file.x.c" -DVERSION="${bud_ver}"
+    fi
+
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}Error: Compilation failed.${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}Script compiled successfully, saved as ${output_file}_v${bud_ver}${NC}"
+}
+
+# 显示菜单函数
+show_menu() {
+    echo -e "${BLUE}
+██████╗ ██╗   ██╗██████╗ ██████╗ ███████╗██╗  ██╗███████╗
+██╔══██╗██║   ██║██╔══██╗╚════██╗██╔════╝╚██╗██╔╝██╔════╝
+██████╔╝██║   ██║██║  ██║ █████╔╝█████╗   ╚███╔╝ █████╗  
+██╔══██╗██║   ██║██║  ██║██╔═══╝ ██╔══╝   ██╔██╗ ██╔══╝  
+██████╔╝╚██████╔╝██████╔╝███████╗███████╗██╔╝ ██╗███████╗
+╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
+"author": "aspnmy@gmail.com"
+${NC}
+"
+    echo -e "${GREEN}bud2exe - A shell script compiler tool${NC}"
+    echo -e "${YELLOW}Usage: bud2exe -s <b2bin|b2GCC|b2WIN> -o output_file -f input_file${NC}"
+    echo -e "Commands:"
+    echo -e "  ${GREEN}b2bin${NC}    Compile script into a single-layer shell binary"
+    echo -e "  ${GREEN}b2GCC${NC}    Compile script into a double-layer binary using GCC"
+    echo -e "  ${GREEN}b2WIN${NC}    Compile script into a 64-bit Windows executable (under development)"
+    echo -e "  ${GREEN}-h${NC}       Show this help message"
+}
+
+# 主函数
+main() {
+    case "${sub_command}" in
+        b2bin|b2GCC)
+            compile_script "${sub_command}" "${output_file}" "${input_file}"
+            ;;
+        b2WIN)
+            echo -e "${YELLOW}b2WIN is under development.${NC}"
+            exit 0
+            ;;
+        *)
+            echo -e "${RED}Invalid sub-command: ${sub_command}${NC}"
+            show_menu
+            exit 1
+            ;;
+    esac
+}
+
+# 解析命令行选项
+while getopts "s:o:f:h" opt; do
+    case "${opt}" in
+        s) sub_command="${OPTARG}" ;;
+        o) output_file="${OPTARG}" ;;
+        f) input_file="${OPTARG}" ;;
+        h) show_menu; exit 0 ;;
+        *) echo "Invalid option: -${OPTARG}"; show_menu; exit 1 ;;
+    esac
+done
+
+# 检查是否提供了所有必需的参数
+if [ -z "${output_file}" ] || [ -z "${input_file}" ] || [ -z "${sub_command}" ]; then
+    echo -e "${RED}Error: All options must be provided.${NC}"
+    show_menu
+    exit 1
+fi
+
+# 执行主函数
+main

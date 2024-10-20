@@ -1,0 +1,190 @@
+#!/bin/bash
+
+# 定义颜色代码
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+NC="\033[0m"  # 无颜色
+
+# 初始化版本号
+bud_ver=$(cat "./newVer.bud") || { echo -e "${RED}错误:版本文件 './newVer.bud' 为空或未找到.${NC}"; exit 1; }
+VERSION=$bud_ver
+SH_NAME="poetryBeBe"
+SRC_DIR="../Src"
+BUD_DIR="../build"
+TOOLS_DIR="../tools"
+LOG_DIR="../logs"
+
+# 如果日志目录不存在,则创建
+mkdir -p "$LOG_DIR"
+
+# 记录消息和时间戳的函数,支持不同日志级别
+log_message() {
+    local level=$1
+    local message=$2
+    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    local log_file="${LOG_DIR}/log_$(date +%Y-%m-%d).log"
+
+    case $level in
+        ERROR)
+            echo "[$timestamp] [ERROR] $message" >> "$log_file"
+            ;;
+        DEBUG)
+            echo "[$timestamp] [DEBUG] $message" >> "$log_file"
+            ;;
+        *)
+            # 默认不记录 INFO 级别的日志
+            ;;
+    esac
+}
+
+
+# 比较版本号的函数
+compare_versions() {
+    # 将版本号字符串转换为可以比较的格式
+    local version1=$(echo "$1" | tr '.' '\n' | sort -V | paste -s -d.)
+    local version2=$(echo "$2" | tr '.' '\n' | sort -V | paste -s -d.)
+
+    # 使用 Bash 的内置算术比较运算符进行比较
+    if [[ "$version1" < "$version2" ]]; then
+        echo "1" # $1 小于 $2
+    elif [[ "$version1" > "$version2" ]]; then
+        echo "0" # $1 大于 $2
+    else
+        echo "0" # $1 等于 $2
+    fi
+}
+
+# 尝试获取最新版本信息,带重试机制
+get_latest_version() {
+    local url="https://api.github.com/repos/${github_usr}/${repos_name}/releases/latest"
+    local max_retries=3
+    local count=0
+
+    while [ $count -lt $max_retries ]; do
+        local response=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+        local newVersion=$(curl -s "$url" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+        if [[ $response -eq 200 && $newVersion ]]; then
+            echo $newVersion
+            return 0
+        else
+            count=$((count+1))
+            sleep 2  # 等待2秒后重试
+            log_message "ERROR" "无法获取最新版本信息,HTTP 状态:$response."
+        fi
+    done
+
+    return 1
+}
+
+# 检查更新的函数
+check_for_updates() {
+    local newVersion=$(get_latest_version)
+    if [[ $? -ne 0 ]]; then
+        return
+    fi
+
+    local comparison=$(compare_versions $VERSION $newVersion)
+    if [[ $comparison -eq 1 ]]; then
+        log_message "DEBUG" "发现新版本:$newVersion"
+        echo -e "${GREEN}发现新版本:$newVersion.${NC}"
+        read -t 30 -p "是否升级？(yes/no) [默认no]: " answer
+        if [[ -z "$answer" || $answer != "yes" ]]; then
+            log_message "DEBUG" "用户中止或超时"
+            echo "升级已中止或超时."
+        else
+            log_message "DEBUG" "用户选择升级"
+            echo "正在下载最新版本..."
+            local script_path="$(realpath "$0")"
+            curl -L "https://github.com/$github_usr/$repos_name/releases/download/v${newVersion}/${packname}_${SH_NAME}" -o "${script_path}.tmp"
+            if [[ $? -eq 0 ]]; then
+                mv "${script_path}" "${script_path}.bak.${VERSION}"
+                mv "${script_path}.tmp" "${script_path}"
+                log_message "DEBUG" "升级下载成功"
+                echo -e "${GREEN}升级下载成功.请重启脚本.${NC}"
+                exit 0
+            else
+                log_message "ERROR" "升级下载失败"
+                echo -e "${RED}升级下载失败.${NC}"
+                rm -f "${script_path}.tmp"
+            fi
+        fi
+    elif [[ $comparison -eq 0 ]]; then
+        log_message "DEBUG" "已是最新版本"
+        echo "已是最新版本."
+    else
+        log_message "ERROR" "版本比较失败"
+        echo "版本比较失败.此情况不应发生."
+    fi
+}
+
+# 检查脚本是否在正确的目录
+current_dir=$(pwd)
+if [[ $current_dir != *"/tools" ]]; then
+    log_message "ERROR" "脚本不在正确的目录"
+    echo -e "${RED}脚本不在正确的目录.请移动到 '${TOOLS_DIR}'.${NC}"
+    exit 1
+fi
+
+# 检查源文件是否存在
+src_file="${SRC_DIR}/${SH_NAME}"
+if [[ ! -f "$src_file" ]]; then
+    log_message "ERROR" "源文件未找到: $src_file"
+    echo -e "${RED}错误:源文件 '${src_file}' 不存在.${NC}"
+    echo "请将文件保存到目录:$SRC_DIR"
+    exit 1
+fi
+
+# 检查更新后等待用户输入或超时
+check_for_updates
+
+# 显示菜单函数
+show_menu() {
+    echo -e "${BLUE}
+/*
+ *  ██████╗ ██╗   ██╗██████╗ ██████╗ ███████╗██╗  ██╗███████╗
+ *  ██╔══██╗██║   ██║██╔══██╗╚════██╗██╔════╝╚██╗██╔╝██╔════╝
+ *  ██████╔╝██║   ██║██║  ██║ █████╔╝█████╗   ╚███╔╝ █████╗  
+ *  ██╔══██╗██║   ██║██║  ██║██╔═══╝ ██╔══╝   ██╔██╗ ██╔══╝  
+ *  ██████╔╝╚██████╔╝██████╔╝███████╗███████╗██╔╝ ██╗███████╗
+ *  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
+ *  'author': 'aspnmy@gmail.com'                                                          
+ */${NC}"
+    echo "选项:"
+    echo "1) bud2exe_bin - 将脚本编译成单层shell二进制文件"
+    echo "2) bud2exe_GCC - 使用GCC将脚本编译成双层二进制文件"
+    echo "3) bud2exe_x86_64 - 将脚本编译成64位Windows可执行文件"
+    echo "0) 退出"
+}
+
+# 主函数
+main() {
+    while true; do
+        show_menu
+        read -p "请输入你的选择:" choice
+        case $choice in
+            1)
+                log_message "DEBUG" "使用bud2exe_bin编译"
+                compile "bud2exe_bin" "$SH_NAME"
+                ;;
+            2)
+                log_message "DEBUG" "使用bud2exe_GCC编译"
+                compile_with_GCC "$SH_NAME"
+                ;;
+            3)
+                log_message "DEBUG" "为Windows编译"
+                compile_for_windows "$SH_NAME"
+                ;;
+            0)
+                echo "退出菜单..."
+                exit 0
+                ;;
+            *)
+                echo "无效选项,请重试."
+                ;;
+        esac
+        echo ""
+    done
+}
+
+main

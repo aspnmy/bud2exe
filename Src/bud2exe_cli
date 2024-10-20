@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# 定义颜色代码
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+BLUE="\033[0;34m"
+NC="\033[0m" # No Color
+
+# 读取版本号
+bud_ver=$(cat "./newVer.bud")
+if [ -z "$bud_ver" ]; then
+    echo -e "${RED}Error: Version file './newVer.bud' is empty or not found.${NC}"
+    exit 1
+fi
+VERSION=$bud_ver
+echo "Version: $VERSION"
+
+# 编译函数
+b2bin() {
+    local output_file="$1"
+    local input_file="$2"
+    CFLAGS="-static" shc -r -f "$input_file" -o "${output_file}_v${bud_ver}"
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}Script compiled successfully, saved as ${output_file}_v${bud_ver}${NC}"
+    else
+        echo -e "${RED}Script compilation failed.${NC}"
+        exit 1
+    fi
+}
+
+b2GCC() {
+    local output_file="$1"
+    local input_file="$2"
+    CFLAGS="-static" shc -r -f "$input_file" -o "${output_file}" --x-c
+    gcc -static -o "${output_file}_v${bud_ver}" "${output_file}.x.c" -DVERSION="${bud_ver}"
+    if [ $? -eq 0 ]; then
+        rm "$output_file"
+        echo -e "${GREEN}Script compiled successfully, saved as ${output_file}_v${bud_ver}${NC}"
+    else
+        echo -e "${RED}Script compilation failed.${NC}"
+        exit 1
+    fi
+}
+
+b2WIN() {
+    echo -e "${YELLOW}Under development.${NC}"
+    exit 0
+}
+
+# 显示菜单函数
+show_menu() {
+    echo -e "${BLUE}
+██████╗ ██╗   ██╗██████╗ ██████╗ ███████╗██╗  ██╗███████╗
+██╔══██╗██║   ██║██╔══██╗╚════██╗██╔════╝╚██╗██╔╝██╔════╝
+██████╔╝██║   ██║██║  ██║ █████╔╝█████╗   ╚███╔╝ █████╗  
+██╔══██╗██║   ██║██║  ██║██╔═══╝ ██╔══╝   ██╔██╗ ██╔══╝  
+██████╔╝╚██████╔╝██████╔╝███████╗███████╗██╔╝ ██╗███████╗
+╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝${NC}
+"
+    echo "bud2exe - A shell script compiler tool"
+    echo "Usage: bud2exe -s <b2bin|b2GCC|b2WIN> -o output_file -f input_file"
+    echo "Commands:"
+    echo "  b2bin    Compile script into a single-layer shell binary"
+    echo "  b2GCC    Compile script into a double-layer binary using GCC"
+    echo "  b2WIN    Compile script into a 64-bit Windows executable (under development)"
+    echo "  -h       Show this help message"
+}
+
+# 参数解析
+PARSED_ARGUMENTS=$(getopt -a -n bud2exe -o s:o:f:h --long help -- "$@")
+VALID_ARGUMENTS=$?
+if [ "$VALID_ARGUMENTS" != "0" ]; then
+    show_menu
+    exit 1
+fi
+eval set -- "$PARSED_ARGUMENTS"
+
+while true; do
+    case "$1" in
+        -s) sub_command="$2"; shift 2 ;;
+        -o) output_file="$2"; shift 2 ;;
+        -f) input_file="$2"; shift 2 ;;
+        -h) show_menu; exit 0 ;;
+        --) shift; break ;;
+        *) echo "Invalid option: $1"; show_menu; exit 1 ;;
+    esac
+done
+
+# 检查是否提供了所有必需的参数
+if [ -z "$output_file" ] || [ -z "$input_file" ] || [ -z "$sub_command" ]; then
+    echo -e "${RED}Error: All options must be provided.${NC}"
+    show_menu
+    exit 1
+fi
+
+# 根据子命令执行相应的函数
+case "$sub_command" in
+    b2bin) b2bin "$output_file" "$input_file" ;;
+    b2GCC) b2GCC "$output_file" "$input_file" ;;
+    b2WIN) b2WIN "$output_file" "$input_file" ;;
+    *) echo "Invalid sub-command: $sub_command"; show_menu; exit 1 ;;
+esac

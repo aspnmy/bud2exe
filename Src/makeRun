@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# 定义颜色代码
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
+BLUE="\033[0;34m"
+NC="\033[0m" # No Color
+
+# 读取版本号
+bud_ver=$(cat "./newVer.bud")
+if [ -z "$bud_ver" ]; then
+    echo -e "${RED}Error: Version file './newVer.bud' is empty or found.${NC}"
+    exit 1
+fi
+VERSION=$bud_ver
+echo "Version: $VERSION"
+
+output_path="../Build"
+input_files=("bud2exe_poetryBeBe" "bud2exe_cli" "bud2exe_climini" "makeRun")
+
+# 编译函数
+compile() {
+    local input_file=$1
+    local output_name=$2
+    ./bud2exe_climini -s b2bin -o "$output_path/${output_name}_sfh_linux" -f "./$input_file"
+    ./bud2exe_climini -s b2GCC -o "$output_path/${output_name}_gcc_linux" -f "./$input_file"
+}
+
+# 计算 SHA256 哈希函数
+calculate_sha256() {
+    local file=$1
+    if [[ -f "$file" ]]; then
+        sha256sum "$file" > "${file}.sh256"
+    else
+        echo "File not found: $file"
+    fi
+}
+
+# 清理函数
+cleanAll() {
+    find . -name "*.x.c" -delete
+    echo "所有编译中间缓存已清理"
+}
+
+# 清理函数
+dellAll() {
+    find $output_path -name "*.*" -delete
+    echo "所有编译中间缓存已清理"
+}
+
+# 显示菜单函数
+show_menu() {
+    echo -e "${BLUE}
+/*
+ *  ██████╗ ██╗   ██╗██████╗ ██████╗ ███████╗██╗  ██╗███████╗
+ *  ██╔══██╗██║   ██║██╔══██╗╚════██╗██╔════╝╚██╗██╔╝██╔════╝
+ *  ██████╔╝██║   ██║██║  ██║ █████╔╝█████╗   ╚███╔╝ █████╗  
+ *  ██╔══██╗██║   ██║██║  ██║██╔═══╝ ██╔══╝   ██╔██╗ ██╔══╝  
+ *  ██████╔╝╚██████╔╝██████╔╝███████╗███████╗██╔╝ ██╗███████╗
+ *  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
+ *  "author": "aspnmy@gmail.com"                                                         
+ */${NC}
+"
+    echo -e "${GREEN}poetryBeBe poetry哔哔小子, 一个简单的poetry管理工具-免费版${NC}"
+    echo -e "${YELLOW}Tg讨论组: https://t.me/+BqvlH6BDOWE3NjQ1${NC}"
+    echo -e "${YELLOW}赞助我们: TKqTUNcBWiRDdczuHoQstMD4XRyFgNwHiF (TRX/USDT)${NC}"
+    echo -e "${GREEN}bud2exe_cli命令行打包工具${NC}"
+    echo -e "${BLUE}请选择一个选项:${NC}"
+    echo -e "  ${GREEN}1${NC}) bud2_all/打包bud2exe所有版本"
+    echo -e "  ${GREEN}2${NC}) bud2sha256/计算哈希值并写文件"
+    echo -e "  ${GREEN}3${NC}) cleanAll/清理所有编译中间缓存"
+    echo -e "  ${GREEN}4${NC}) dellAll/清理所有已编译文件"
+    echo -e "  ${GREEN}0${NC}) 退出"
+}
+
+# 主函数
+main() {
+    case $1 in
+        1)
+            echo "打包所有版本"
+            for file in "${input_files[@]}"; do
+                compile "$file" "bud2exe_${file}"
+            done
+            ;;
+        2)
+            echo "计算哈希值并写文件"
+            for file in "${output_path}"/bud2exe_*; do
+                calculate_sha256 "$file"
+            done
+            ;;
+        3)
+            echo "清零所有编译中间缓存"
+            cleanAll
+            ;;
+        4)
+            echo "清理所有已编译文件"
+            dellAll
+            ;;
+        0)
+            echo "退出菜单"
+            exit 0
+            ;;
+        *)
+            echo "无效的选项，请重新输入。"
+            ;;
+    esac
+}
+
+# 无限循环，直到用户选择退出
+while true; do
+    show_menu
+    read -p "请输入你的选择: " choice
+    main "$choice"
+    echo "" # 打印一个空行以分隔菜单
+done
