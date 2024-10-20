@@ -8,6 +8,8 @@ NC="\033[0m"  # 无颜色
 # 初始化版本号
 bud_ver=$(cat "./newVer.bud") || { echo -e "${RED}错误:版本文件 './newVer.bud' 为空或未找到.${NC}"; exit 1; }
 VERSION=$bud_ver
+
+
 SH_NAME="poetryBeBe"
 SRC_DIR="../Src"
 BUD_DIR="../build"
@@ -150,6 +152,7 @@ show_menu() {
  *  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
  *  'author': 'aspnmy@gmail.com'                                                          
  */${NC}"
+    echo "Version: $VERSION"
     echo "选项:"
     echo "1) bud2exe_bin - 将脚本编译成单层shell二进制文件"
     echo "2) bud2exe_GCC - 使用GCC将脚本编译成双层二进制文件"
