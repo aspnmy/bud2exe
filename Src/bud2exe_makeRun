@@ -8,7 +8,7 @@ NC="\033[0m"  # 无颜色
 # 初始化版本号
 bud_ver=$(cat "./newVer.bud") || { echo -e "${RED}错误：版本文件 './newVer.bud' 为空或未找到。${NC}"; exit 1; }
 VERSION=$bud_ver
-echo "Version: $VERSION"
+echo -e "Version: $VERSION"
 
 output_path="../Build"
 SRC_DIR="../Src"
@@ -24,8 +24,10 @@ mkdir -p "$output_path"
 log_message() {
     local level=$1
     local message=$2
-    local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    local log_file="${LOG_DIR}/$(date +%Y-%m-%d).log"
+    local timestamp
+    timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    local log_file
+    log_file="${LOG_DIR}/$(date +%Y-%m-%d).log"
 
     case $level in
         ERROR)
@@ -130,7 +132,7 @@ main() {
         5)
             echo "清理所有日志"
             cleanLOGS
-            ;;            
+            ;;
         0)
             echo "退出菜单"
             exit 0
@@ -146,5 +148,5 @@ while true; do
     show_menu
     read -p "请输入你的选择: " choice
     main "$choice"
-    echo "" 
+    echo ""
 done
