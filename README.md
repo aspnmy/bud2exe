@@ -1,11 +1,15 @@
 # bud2exe 说明
 
 - 为了更安全的运行sh脚本,所写的一个编译脚本成二进制文件小工具
-- 是 "poetryBeBe"(https://github.com/aspnmy/poetryBeBe.git) 管理器的一个配套编译小工具,目前独立维护,方便进行脚本文件编译
+- 是 "poetryBeBe"(https://github.com/aspnmy/poetryBeBe.git) 管理器的一个配套编译小工具,目前独立维护(bud2exe),方便进行脚本文件编译
+
+## 群组与沟通
+
+[https://t.me/+eq8FgfNVNIY3NWNk](https://t.me/+eq8FgfNVNIY3NWNk)
 
 ## V1和V3的 区别
 
-- V1是最早的版本2010年的主要用于将shell脚本编译成二进制程序
+- V1是版本2004年写的主要用于将shell脚本编译成二进制程序
 - V3是2025年重构版本，除了让V1使用起来更傻瓜，另一个问题是用来编译成exe执行文件
 
 ### V3版本说明
