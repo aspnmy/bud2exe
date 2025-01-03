@@ -1,0 +1,71 @@
+#!/bin/bash
+# 编译脚本成二进制文件
+#   "name": "bud2exe",
+#   "version": "v3.0.0",
+#   "description": "一个sh脚本编译工具,可以编译脚本成bin或exe文件,暂时不支持MacOS,可绕过杀软,请不要编译非法代码.Tg讨论组:https://t.me/+BqvlH6BDOWE3NjQ1,赞助我们:TKqTUNcBWiRDdczuHoQstMD4XRyFgNwHiF (TRX/USDT)\",
+#   "main": "bin/Src/bud2exe",
+#   "author": "aspnmy@gmail.com",
+#   "license": "ISC",
+#   "bugs": {
+#     "url": "https://github.com/aspnmy/bud2exe/issues"
+#   },
+#   "homepage": "https://github.com/aspnmy/bud2exe#readme"
+#   "用法":"bud2exe -s <b2bin|b2GCC|b2WIN> -o output_file -f input_file "
+# 以传参的形式执行的脚本
+
+# 引入函数库
+source_utilityFunction() {
+    UTILITY_FUNCTION_PATH="${CURRENT_DIR}/bin/Core/utilityFunction.sh"
+    if [ -f "$UTILITY_FUNCTION_PATH" ]; then
+        # shellcheck source=/path/to/Core/utilityFunction.sh
+        # shellcheck disable=SC1091
+        source "$UTILITY_FUNCTION_PATH"
+    else
+        log "函数库文件不存在: $UTILITY_FUNCTION_PATH"
+        exit 1
+    fi
+}
+
+# 调用 source_utilityFunction 函数
+source_utilityFunction
+
+# 检查业务组件是否安装
+ck_tools() {
+    ck_install_jq
+    ck_install_gcc
+    ck_install_shc
+}
+
+
+main(){
+# 解析命令行选项
+while getopts "s:o:f:h" opt; do
+    case "${opt}" in
+        s) sub_command="${OPTARG}" ;;
+        o) output_file="${OPTARG}" ;;
+        f) input_file="${OPTARG}" ;;
+        h) help; exit 0 ;;
+        *) echo "Usage: bud2exe -s <b2bin|b2GCC|b2WIN> -o output_file -f input_file "; exit 1 ;;
+    esac
+done
+
+# 检查是否提供了所有必需的参数
+if [ -z "${output_file}" ] || [ -z "${input_file}" ] || [ -z "${sub_command}" ]; then
+    echo "Error: All options must be provided."
+    echo "Usage: bud2exe -s <b2bin|b2GCC|b2WIN> -o output_file -f input_file "
+    exit 1
+fi
+
+# 根据子命令执行相应的函数
+case "${sub_command}" in
+
+    b2bin) b2bin "${output_file}" "${input_file}" ;;
+    b2GCC) b2GCC "${output_file}" "${input_file}" ;;
+    b2WIN) b2WIN "${output_file}" "${input_file}" ;;
+    help) show_menu ;;
+    *) echo "Invalid sub-command: ${sub_command}"; echo "Usage: bud2exe -s <b2bin|b2GCC|b2WIN> -o output_file -f input_file "; help; exit 1 ;;
+esac
+}
+
+
+main "$@"

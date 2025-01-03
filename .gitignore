@@ -39,3 +39,8 @@
 ./Build/*
 **/Build/**
 ./Build
+
+# Src_todo
+bin/Src/*.json
+bin/Src/*_updateSrc
+bin/Src/*_makeRun
