@@ -347,6 +347,12 @@ create_tar() {
     fi
 }
 
+# 显示文档函数
+doc() {
+    echo "文档路径: ./docs/docs.md"
+    cat ./docs/docs.md
+}
+
 # 显示菜单函数
 show_menu() {
     echo -e "${BLUE}
@@ -373,6 +379,7 @@ show_menu() {
  *    "9 查看版本/用法: bud2exe -s version"
  *    "a 查看帮助/用法: bud2exe -s help"
  *    "b 安装所有组件/用法: bud2exe -s ck_install_tools"
+ *    "c 查看文档/用法: bud2exe -s doc"
  *    "0 退出"
  * */${NC}"
 }
@@ -407,13 +414,19 @@ while getopts "vhs:o:f:h" opt; do
 done
 
 # 检查是否提供了所有必需的参数
-if [ -z "${output_file}" ] || [ -z "${input_file}" ] || [ -z "${sub_command}" ]; then
-    echo "Error: All options must be provided."
+if [ -z "${sub_command}" ]; then
+    echo "Error: Sub-command must be provided."
     echo "Usage: bud2exe -s <b2bin|b2gcc|b2win|create_tar> -o output_file -f input_file "
     exit 1
 fi
 
-
+if [[ "${sub_command}" != "cleanBuilds" && "${sub_command}" != "cleanLOGS" && "${sub_command}" != "cleanC" && "${sub_command}" != "cleanALL" && "${sub_command}" != "version" && "${sub_command}" != "ck_install_tools" && "${sub_command}" != "doc" && "${sub_command}" != "help" ]]; then
+    if [ -z "${output_file}" ] || [ -z "${input_file}" ]; then
+        echo "Error: Output file and input file must be provided."
+        echo "Usage: bud2exe -s <b2bin|b2gcc|b2win|create_tar> -o output_file -f input_file "
+        exit 1
+    fi
+fi
 
 # 根据子命令执行相应的函数
 case "${sub_command}" in
@@ -446,6 +459,9 @@ case "${sub_command}" in
         ;;
     ck_install_tools)
         ck_install_tools
+        ;;
+    doc)
+        doc
         ;;
     help)
         show_menu
