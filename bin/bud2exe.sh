@@ -26,6 +26,8 @@ initialize() {
     set -o nounset  # 如果使用了未定义的变量，则退出脚本
     set -o pipefail # 如果管道中的任何命令失败，则整个管道失败
 
+    # 设置内存限制为 64MB
+    ulimit -m 65536
 
     if [ ! -z "$Releases_DIR" ]; then
         mkdir -p "$Releases_DIR"
@@ -109,7 +111,25 @@ b2GCC() {
 
 
 b2WIN() {
-    log "正在开发中,敬请期待"
+    local bud_ver
+    bud_ver=$(get_Config_newVer)
+    local outputDir
+    outputDir=$(get_Config_outputDir)
+    local output_file="$1"
+    local input_file="$2"
+
+    local outputFile_Name="${outputDir}/${output_file}_x86_64_v${bud_ver}.exe"
+
+    # 使用 MinGW-w64 交叉编译工具链编译
+    shc -r -f "$input_file" -o "${input_file}.x"
+    x86_64-w64-mingw32-gcc -o "${outputFile_Name}" "${input_file}.x.c"
+    if [ $? -eq 0 ]; then
+        log "脚本编译成功,保存在${outputFile_Name}"
+        rm "${input_file}.x" "${input_file}.x.c"
+    else
+        log "脚本编译失败."
+        exit 1
+    fi
 }
 
 # 计算 SHA256 哈希函数
@@ -143,6 +163,18 @@ cleanBuilds() {
     log "DEBUG" "所有编译文件已清理"
 }
 
+# 清理所有文件函数
+cleanALL() {
+    cleanC
+    cleanLOGS
+    cleanBuilds
+    log "DEBUG" "所有文件已清理"
+}
+
+# 显示版本信息函数
+version() {
+    echo "当前版本: ${version}"
+}
 
 log() {
     local rr_debug
@@ -231,16 +263,22 @@ ck_install_tools() {
             ;;
     esac
 
-    # 安装 gcc, jq, shc
-    log "正在安装 gcc, jq, shc..."
-    if [ "$package_manager" == "brew" ]; then
-        $install_command gcc jq shc
+    # 检查并安装缺失的组件
+    for tool in gcc jq shc x86_64-w64-mingw32-gcc g++-mingw-w64-x86-64 binutils-mingw-w64-x86-64 tar; do
+        if ! command -v "$tool" &> /dev/null; then
+            log "正在安装 $tool..."
+    if [ "$package_manager" == "apt-get" ]; then
+        sudo apt-get update
+            fi
+            $install_command "$tool"
     else
-        $install_command gcc jq shc
+            log "$tool 已经安装。"
     fi
+    done
 
-    log "安装完成。"
+    log "所有组件检查并安装完成。"
 }
+
 get_Time() {
     formatted_date=$(date +"%Y-%m-%d %H:%M:%S")
     echo "$formatted_date"
@@ -289,6 +327,26 @@ get_Config_outputDir() {
     echo "$res"
 }
 
+# 新增函数: 使用 tar 打包文件
+create_tar() {
+    
+    local output_tar="$1" # 打包后的文件名*.tar.gz
+    local source_dir="$2" # 被打包的目录
+    if [ -d "$source_dir" ]; then
+        tar -czvf "$output_tar" -C "$source_dir" .
+        if [ $? -eq 0 ]; then
+            log "文件打包成功,保存在${output_tar}"
+            exit 0
+        else
+            log "文件打包失败."
+            exit 1
+        fi
+    else
+        log "ERROR" "目录未找到：$source_dir"
+        exit 1
+    fi
+}
+
 # 显示菜单函数
 show_menu() {
     echo -e "${BLUE}
@@ -298,20 +356,30 @@ show_menu() {
  *  ██████╔╝██║   ██║██║  ██║ █████╔╝█████╗   ╚███╔╝ █████╗
  *  ██╔══██╗██║   ██║██║  ██║██╔═══╝ ██╔══╝   ██╔██╗ ██╔══╝
  *  ██████╔╝╚██████╔╝██████╔╝███████╗███████╗██╔╝ ██╗███████╗
- *  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝╚══════╝
- *  'author': 'aspnmy@gmail.com'
- */${NC}"
-    echo "bud2exe,一个简单的二进制编译工具-免费版"
-    echo "Tg讨论组:https://t.me/+BqvlH6BDOWE3NjQ1"
-    echo "赞助我们:TKqTUNcBWiRDdczuHoQstMD4XRyFgNwHiF (TRX/USDT)"
-    echo "1)b2bin/编译脚本成为一个1层加壳的二进制文件(需要shc组件)/用法: bud2exe -s b2bin -o output_file -f input_file "
-    echo "2)b2GCC/用GCC再次编译脚本成为一个2层加壳的二进制文件(需要gcc组件)/用法: bud2exe -s b2GCC -o output_file -f input_file "
-    echo "3)b2WIN/编译脚本成为一个64位exe文件(需要安装MinGW-w64 交叉编译工具链)/用法: bud2exe -s b2WIN -o output_file -f input_file "
-    echo "0)退出"
+ *  ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚══════╝
+ *  "author: aspnmy@gmail.com"
+ *
+ *    "bud2exe,一个简单的二进制编译工具-免费版"
+ *    "Tg讨论组:https://t.me/+BqvlH6BDOWE3NjQ1"
+ *    "赞助我们:TKqTUNcBWiRDdczuHoQstMD4XRyFgNwHiF 【TRX/USDT】"
+ *    "1 b2bin/编译脚本成为一个1层加壳的二进制文件-需要shc组件/用法: bud2exe -s b2bin -o output_file -f input_file "
+ *    "2 b2GCC/用GCC再次编译脚本成为一个2层加壳的二进制文件-需要gcc组件 /用法: bud2exe -s b2GCC -o output_file -f input_file "
+ *    "3 b2WIN/编译脚本成为一个64位exe文件-需要安装MinGW-w64 交叉编译工具链，使用此函数的时候如果被编译的是shell脚本需要win系统支持bin/bash环境 /用法: bud2exe -s b2WIN -o output_file -f input_file "
+ *    "4 create_tar/打包目录成为一个tar.gz文件/用法: bud2exe -s create_tar -o output_tar -f source_dir "
+ *    "5 清理所有编译文件/用法: bud2exe -s cleanBuilds"
+ *    "6 清理所有日志文件/用法: bud2exe -s cleanLOGS"
+ *    "7 清理所有中间文件/用法: bud2exe -s cleanC"
+ *    "8 清理所有文件/用法: bud2exe -s cleanALL"
+ *    "9 查看版本/用法: bud2exe -s version"
+ *    "a 查看帮助/用法: bud2exe -s help"
+ *    "b 安装所有组件/用法: bud2exe -s ck_install_tools"
+ *    "0 退出"
+ * */${NC}"
 }
 
 main(){
     show_menu
+    
 # 解析命令行选项
 while getopts "vhs:o:f:h" opt; do
     case "${opt}" in
@@ -332,7 +400,7 @@ while getopts "vhs:o:f:h" opt; do
             exit 0
             ;;
         *)
-            echo "Usage: bud2exe -s <b2bin|b2gcc|b2win> -o output_file -f input_file "
+            echo "Usage: bud2exe -s <b2bin|b2gcc|b2win|create_tar> -o output_file -f input_file "
             exit 1
             ;;
     esac
@@ -341,7 +409,7 @@ done
 # 检查是否提供了所有必需的参数
 if [ -z "${output_file}" ] || [ -z "${input_file}" ] || [ -z "${sub_command}" ]; then
     echo "Error: All options must be provided."
-    echo "Usage: bud2exe -s <b2bin|b2gcc|b2win> -o output_file -f input_file "
+    echo "Usage: bud2exe -s <b2bin|b2gcc|b2win|create_tar> -o output_file -f input_file "
     exit 1
 fi
 
@@ -356,12 +424,35 @@ case "${sub_command}" in
         b2GCC "${output_file}" "${input_file}"
         ;;
     b2win)
-        b2WIN "${output_file}" "${input_file}" 
+        b2WIN "${output_file}" "${input_file}"
         ;;
-
+    create_tar)
+        create_tar "${input_file}" "${output_file}"
+        ;;
+    cleanBuilds)
+        cleanBuilds
+        ;;
+    cleanLOGS)
+        cleanLOGS
+        ;;
+    cleanC)
+        cleanC
+        ;;
+    cleanALL)
+        cleanALL
+        ;;
+    version)
+        version
+        ;;
+    ck_install_tools)
+        ck_install_tools
+        ;;
+    help)
+        show_menu
+        ;;
     *)
         echo "Invalid sub-command: ${sub_command}"
-        echo "Usage: bud2exe -s <b2bin|b2gcc|b2win> -o output_file -f input_file "
+        echo "Usage: bud2exe -s <b2bin|b2gcc|b2win|create_tar> -o output_file -f input_file "
         exit 1
         ;;
 esac
